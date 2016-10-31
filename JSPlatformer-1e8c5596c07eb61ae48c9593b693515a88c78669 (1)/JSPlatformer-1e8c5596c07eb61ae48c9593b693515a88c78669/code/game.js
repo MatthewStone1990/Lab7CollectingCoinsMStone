@@ -1,7 +1,8 @@
 // Map each class of actor to a character
 var actorChars = {
   "@": Player,
-  "o": Coin // A coin will wobble up and down
+  "o": Coin, // A coin will wobble up and down.
+  "+": Bonus  //A plus will earn bonus points. 
 };
 
 function Level(plan) {
@@ -37,7 +38,8 @@ function Level(plan) {
       // Because there is a third case (space ' '), use an "else if" instead of "else"
       else if (ch == "!")
         fieldType = "lava";
-
+	  else if (ch == "+")
+		fieldType = "bonus";
       // "Push" the fieldType, which is a string, onto the gridLine array (at the end).
       gridLine.push(fieldType);
     }
@@ -82,6 +84,14 @@ function Coin(pos) {
   this.wobble = Math.random() * Math.PI * 2;
 }
 Coin.prototype.type = "coin";
+
+function Bonus(pos) {
+  this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
+  this.size = new Vector(0.6, 0.6);
+  // Make it go back and forth in a sine wave.
+  this.wobble = Math.random() * Math.PI * 2;
+}
+Bonus.prototype.type = "bonus";
 
 // Helper function to easily create an element of a type provided 
 // and assign it a class.
@@ -228,7 +238,7 @@ Level.prototype.animate = function(step, keys) {
     var thisStep = Math.min(step, maxStep);
     this.actors.forEach(function(actor) {
       // Allow each actor to act on their surroundings
-      actor.act(thisStep, this, keys);
+      actor.act(thisStep, this, keys)
     }, this);
    // Do this by looping across the step size, subtracing either the
    // step itself or 100 milliseconds
@@ -236,7 +246,7 @@ Level.prototype.animate = function(step, keys) {
   }
 };
 
-var maxStep = 0.05;
+var maxStep = 0.03;
 
 var wobbleSpeed = 8, wobbleDist = 0.07;
 
@@ -246,7 +256,17 @@ Coin.prototype.act = function(step) {
   this.pos = this.basePos.plus(new Vector(0, wobblePos));
 };
 
-var maxStep = 0.05;
+var maxStep = 0.03;
+
+var wobbleSpeed = 8, wobbleDist = 0.07;
+
+Coin.prototype.act = function(step) {
+  this.wobble += step * wobbleSpeed;
+  var wobblePos = Math.sin(this.wobble) * wobbleDist;
+  this.pos = this.basePos.plus(new Vector(0, wobblePos));
+};
+
+var maxStep = 0.03;
 
 var playerXSpeed = 7;
 
@@ -304,6 +324,13 @@ Level.prototype.playerTouched = function(type, actor) {
   }
 };
 
+Level.prototype.playerTouched = function(type, actor) {
+  if (type == "bonus") {
+    this.actors = this.actors.filter(function(other) {
+      return other != actor;
+    });
+  }
+};
 // Arrow key codes for readibility
 var arrowCodes = {37: "left", 38: "up", 39: "right"};
 
